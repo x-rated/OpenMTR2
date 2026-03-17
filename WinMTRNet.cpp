@@ -51,11 +51,7 @@ WinMTRNet::WinMTRNet(const WinMTROptions& options)
     ghMutex = CreateMutex(nullptr, FALSE, nullptr);
     if (!ghMutex) return;
 
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-        MessageBoxW(nullptr, L"Failed initializing Windows Sockets!", L"OpenMTR", MB_OK | MB_ICONERROR);
-        return;
-    }
+    // WSAStartup is called once globally in main.cpp — no need to repeat it here.
 
     hICMP_DLL = LoadLibraryW(L"Iphlpapi.dll");
     if (!hICMP_DLL) {
@@ -101,7 +97,7 @@ WinMTRNet::~WinMTRNet()
         if (hICMP != INVALID_HANDLE_VALUE)
             lpfnIcmpCloseHandle(hICMP);
         FreeLibrary(hICMP_DLL);
-        WSACleanup();
+        // WSACleanup is called once globally in main.cpp
     }
     if (ghMutex) CloseHandle(ghMutex);
 }

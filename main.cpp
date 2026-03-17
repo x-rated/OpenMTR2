@@ -2,25 +2,20 @@
 #include "MainWindow.h"
 #include "CrashHandler.h"
 
-// Do NOT call RoInitialize/CoInitialize here.
-//
-// Qt6 on Windows manages COM apartments internally across its threads
-// (UI thread, render thread, etc.).  Calling RoInitialize(STA) on the
-// main thread before QApplication is constructed puts the UI thread into
-// an STA apartment that conflicts with Qt's own COM initialisation for
-// Direct2D / DirectWrite rendering, causing a null COM interface pointer
-// dereference inside Qt6Widgets -> crash.
-//
-// The WinMTR-refresh engine's WinRT context issue (get_current_winrt_context
-// capturing an invalid apartment) is addressed by constructing WinMTRNet
-// lazily — inside MainWindow — only after the Qt event loop has started and
-// Qt has fully initialised its own COM/WinRT state.  WinMTRNet is already
-// constructed in MainWindow's constructor (not in main), so this is already
-// the case.  No extra RoInitialize call is needed or safe here.
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
 
 int main(int argc, char* argv[])
 {
     CrashHandler::install();
+
+    // Initialise Winsock once for the lifetime of the process.
+    // This must happen before any getaddrinfo / DNS calls, including
+    // the ones in MainWindow::onStartStop before WinMTRNet is created.
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
 
     // DPI awareness is declared in app.manifest (PerMonitorV2).
     QApplication app(argc, argv);
@@ -30,6 +25,8 @@ int main(int argc, char* argv[])
 
     MainWindow w;
     w.show();
+    int ret = app.exec();
 
-    return app.exec();
+    WSACleanup();
+    return ret;
 }
