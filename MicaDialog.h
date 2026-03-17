@@ -91,7 +91,7 @@ private:
                 #micaFrame {
                     background-color: rgba(32, 32, 36, 0.96);
                     border: 1px solid rgba(255,255,255,0.08);
-                    border-radius: 8px;
+                    border-radius: 12px;
                 }
                 #micaTitle {
                     color: #ffffff;
@@ -106,26 +106,31 @@ private:
                     font-size: 14px;
                     background: transparent;
                 }
-                #micaSep { background-color: rgba(255,255,255,0.08); border: none; }
-                #micaBtnArea { background: transparent; }
+                #micaSep { background-color: rgba(255,255,255,0.06); border: none; }
+                #micaBtnArea {
+                    background-color: rgba(255,255,255,0.03);
+                    border-bottom-left-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                }
                 #micaClose {
-                    background-color: #3b7de8;
+                    background-color: transparent;
                     color: #ffffff;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 6px 16px;
+                    border: 1px solid rgba(255,255,255,0.18);
+                    border-radius: 16px;
+                    padding: 5px 20px;
                     font-family: "Segoe UI";
                     font-size: 14px;
+                    min-width: 80px;
                 }
-                #micaClose:hover   { background-color: #4f8ef0; }
-                #micaClose:pressed { background-color: #2563c9; }
+                #micaClose:hover   { background-color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); }
+                #micaClose:pressed { background-color: rgba(255,255,255,0.04); }
             )");
         } else {
             frame->setStyleSheet(R"(
                 #micaFrame {
                     background-color: rgba(249, 249, 249, 0.98);
-                    border: 1px solid rgba(0,0,0,0.10);
-                    border-radius: 8px;
+                    border: 1px solid rgba(0,0,0,0.08);
+                    border-radius: 12px;
                 }
                 #micaTitle {
                     color: #1a1a1a;
@@ -135,24 +140,29 @@ private:
                     background: transparent;
                 }
                 #micaBody {
-                    color: rgba(0,0,0,0.65);
+                    color: rgba(0,0,0,0.55);
                     font-family: "Segoe UI";
                     font-size: 14px;
                     background: transparent;
                 }
-                #micaSep { background-color: rgba(0,0,0,0.08); border: none; }
-                #micaBtnArea { background: transparent; }
+                #micaSep { background-color: rgba(0,0,0,0.05); border: none; }
+                #micaBtnArea {
+                    background-color: rgba(0,0,0,0.03);
+                    border-bottom-left-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                }
                 #micaClose {
-                    background-color: #3b7de8;
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 6px 16px;
+                    background-color: transparent;
+                    color: #1a1a1a;
+                    border: 1px solid rgba(0,0,0,0.15);
+                    border-radius: 16px;
+                    padding: 5px 20px;
                     font-family: "Segoe UI";
                     font-size: 14px;
+                    min-width: 80px;
                 }
-                #micaClose:hover   { background-color: #4f8ef0; }
-                #micaClose:pressed { background-color: #2563c9; }
+                #micaClose:hover   { background-color: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.22); }
+                #micaClose:pressed { background-color: rgba(0,0,0,0.08); }
             )");
         }
 
