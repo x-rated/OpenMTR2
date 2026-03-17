@@ -1,0 +1,129 @@
+# Migration steps — from OpenMTR → OpenMTR2
+
+Follow these steps in order to stand up the new repo and push it to GitHub.
+
+---
+
+## 1. Create the new GitHub repo
+
+Go to https://github.com/new and create:
+- Name: `OpenMTR2`
+- Description: OpenMTR — modern Qt6 network diagnostic tool (clean fork)
+- Public
+- No README, no .gitignore (we supply our own)
+
+---
+
+## 2. Clone your existing OpenMTR locally (if not already)
+
+```
+git clone https://github.com/x-rated/OpenMTR.git
+```
+
+---
+
+## 3. Clone White-Tiger/WinMTR for its src/ files
+
+```
+git clone https://github.com/White-Tiger/WinMTR.git winmtr-redux-temp
+```
+
+---
+
+## 4. Set up the OpenMTR2 folder
+
+```
+mkdir OpenMTR2
+cd OpenMTR2
+git init
+git remote add origin https://github.com/x-rated/OpenMTR2.git
+```
+
+---
+
+## 5. Copy all files from OpenMTR into OpenMTR2 root
+
+Copy these files from OpenMTR/:
+- MainWindow.cpp
+- MainWindow.h
+- WinMTRNetWrapper.h
+- CrashHandler.h
+- main.cpp
+- resources.qrc
+- app.rc
+- app.ico
+- check.svg
+- app.manifest
+- LICENSE
+- engine/   (entire folder)
+
+---
+
+## 6. Copy the supplied scaffold files into OpenMTR2
+
+These are the files generated for this repo:
+- README.md
+- .gitignore
+- OpenMTR2.sln
+- OpenMTR2.vcxproj
+- .github/workflows/build.yml
+- engine/winmtr-redux/ATTRIBUTION.md
+
+---
+
+## 7. Copy White-Tiger/WinMTR src/ into engine/winmtr-redux/
+
+```
+cp winmtr-redux-temp/src/* OpenMTR2/engine/winmtr-redux/
+```
+
+The files there are reference-only and are NOT added to the .vcxproj compile list.
+
+---
+
+## 8. Rename references inside MainWindow.cpp and main.cpp
+
+Do a find-and-replace:
+- `"OpenMTR v1.0.0"` → `"OpenMTR v2.0.0"` (or keep v1.0.0 — your call)
+- Window title string in setWindowTitle() calls
+
+The .vcxproj already outputs `OpenMTR2.exe`. Once you rename the repo to
+`OpenMTR` you can rename the .sln/.vcxproj back to `OpenMTR`.
+
+---
+
+## 9. First commit and push
+
+```
+cd OpenMTR2
+git add .
+git commit -m "Initial commit — OpenMTR2 with Qt6 UI + WinMTR-refresh engine + WinMTR Redux reference"
+git push -u origin main
+```
+
+---
+
+## 10. Verify GitHub Actions
+
+Go to https://github.com/x-rated/OpenMTR2/actions — the build job should
+trigger automatically and produce an `OpenMTR2-x64` artifact within ~5 minutes.
+
+---
+
+## 11. Later: rename and archive
+
+Once OpenMTR2 is stable:
+1. Archive `x-rated/OpenMTR` (Settings → Archive repository)
+2. Rename `x-rated/OpenMTR2` → `OpenMTR` (Settings → Repository name)
+3. Update README and any external links
+
+---
+
+## Notes
+
+- The `engine/winmtr-redux/` files are GPL-2.0, same as this project.
+  ATTRIBUTION.md inside that folder documents the origin.
+- The active engine is `engine/*.ixx` (WinMTR-refresh by leeter) — the
+  winmtr-redux files are not compiled.
+- To create a tagged release: `git tag v2.0.0 && git push origin v2.0.0`
+  The CI `release` job will auto-run and create a GitHub Release with a zip.

@@ -1,0 +1,22 @@
+# Build outputs
+bin/
+obj/
+dist/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+
+# Qt generated files
+# (moc_ and qrc_ files are generated into obj/ so already covered above)
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Archives
+*.zip
+*.7z
