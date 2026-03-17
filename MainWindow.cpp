@@ -502,7 +502,7 @@ void MainWindow::onStartStop()
             hints.ai_family = m_ipv6Check->isChecked() ? AF_INET6 : AF_INET;
             rc = getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res);
             if (rc != 0 || !res) {
-                MicaDialog::show(this, "OpenMTR", QString("Could not resolve "%1".").arg(target), m_darkMode);
+                MicaDialog::show(this, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), m_darkMode);
                 return;
             }
         }
@@ -512,7 +512,7 @@ void MainWindow::onStartStop()
             if (r->ai_family == hints.ai_family) { match = r; break; }
         if (!match) {
             freeaddrinfo(res);
-            MicaDialog::show(this, "OpenMTR", QString("Could not resolve "%1".").arg(target), m_darkMode);
+            MicaDialog::show(this, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), m_darkMode);
             return;
         }
         memcpy(&addr, match->ai_addr,
@@ -691,7 +691,7 @@ void MainWindow::onExport()
     if (path.isEmpty()) return;
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        MicaDialog::show(this, "OpenMTR", QString("Could not write to "%1".").arg(path), m_darkMode);
+        MicaDialog::show(this, "OpenMTR", QString("Could not write to \"%1\".").arg(path), m_darkMode);
         return;
     }
     QTextStream ts(&f);
