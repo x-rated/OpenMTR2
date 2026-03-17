@@ -5,7 +5,6 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QFileDialog>
-#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QLabel>
 #include <QtGui/QClipboard>
@@ -19,6 +18,8 @@
 #include <QtCore/QTextStream>
 #include <QtCore/QDateTime>
 #include <QtCore/QPointer>
+#include <QtCore/QTimer>
+#include "MicaDialog.h"
 #include <dwmapi.h>
 #include <windows.h>
 #include <windns.h>
@@ -501,8 +502,7 @@ void MainWindow::onStartStop()
             hints.ai_family = m_ipv6Check->isChecked() ? AF_INET6 : AF_INET;
             rc = getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res);
             if (rc != 0 || !res) {
-                QMessageBox::warning(this, "OpenMTR",
-                    QString("Could not resolve \"%1\".").arg(target));
+                MicaDialog::show(this, "OpenMTR", QString("Could not resolve "%1".").arg(target), m_darkMode);
                 return;
             }
         }
@@ -512,8 +512,7 @@ void MainWindow::onStartStop()
             if (r->ai_family == hints.ai_family) { match = r; break; }
         if (!match) {
             freeaddrinfo(res);
-            QMessageBox::warning(this, "OpenMTR",
-                QString("Could not resolve \"%1\".").arg(target));
+            MicaDialog::show(this, "OpenMTR", QString("Could not resolve "%1".").arg(target), m_darkMode);
             return;
         }
         memcpy(&addr, match->ai_addr,
@@ -692,7 +691,7 @@ void MainWindow::onExport()
     if (path.isEmpty()) return;
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "OpenMTR", QString("Could not write to \"%1\".").arg(path));
+        MicaDialog::show(this, "OpenMTR", QString("Could not write to "%1".").arg(path), m_darkMode);
         return;
     }
     QTextStream ts(&f);
