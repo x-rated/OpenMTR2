@@ -18,6 +18,7 @@
 #include <ws2ipdef.h>
 #include <winreg.h>
 
+// WinMTRNetWrapper.h also defines IWinMTROptionsProvider — include it first
 #include "WinMTRNetWrapper.h"
 
 #include <memory>
@@ -27,14 +28,6 @@
 #include <stop_token>
 #include <unordered_map>
 #include <string>
-
-// Options interface — implemented by MainWindow, consumed by WinMTRNetWrapper
-struct IWinMTROptionsProvider {
-    virtual ~IWinMTROptionsProvider() = default;
-    [[nodiscard]] virtual unsigned getPingSize() const noexcept = 0;
-    [[nodiscard]] virtual double   getInterval() const noexcept = 0;
-    [[nodiscard]] virtual bool     getUseDNS()   const noexcept = 0;
-};
 
 class MainWindow : public QMainWindow, public IWinMTROptionsProvider
 {
@@ -58,14 +51,14 @@ private slots:
     void onToggleTheme();
 
 private:
-    void setupUi();
-    void resizeEvent(QResizeEvent* event) override;
-    bool eventFilter(QObject* obj, QEvent* event) override;
-    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
-    void applyDarkTheme();
-    void applyLightTheme();
-    void applyWin11Chrome(bool dark);
-    void updateTable();
+    void    setupUi();
+    void    resizeEvent(QResizeEvent* event) override;
+    bool    eventFilter(QObject* obj, QEvent* event) override;
+    bool    nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+    void    applyDarkTheme();
+    void    applyLightTheme();
+    void    applyWin11Chrome(bool dark);
+    void    updateTable();
     QString buildTextExport() const;
     static bool    isWindowsDarkMode();
     static QString lookupASN(const QString& ip, bool ipv6);
@@ -85,9 +78,9 @@ private:
     QTableWidget*   m_table        = nullptr;
 
     // State
-    std::shared_ptr<WinMTRNetWrapper>    m_net;
-    std::stop_source                     m_stopSource;
-    std::vector<std::array<int, 2>>      m_baseline;
+    std::shared_ptr<WinMTRNetWrapper>   m_net;
+    std::stop_source                    m_stopSource;
+    std::vector<std::array<int, 2>>     m_baseline;
     bool    m_tracing  = false;
     bool    m_darkMode = true;
     bool    m_counting = false;
