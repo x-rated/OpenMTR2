@@ -100,6 +100,7 @@ void MainWindow::setupUi()
     m_targetEdit->setFrame(false);
     m_targetEdit->setTextMargins(0, 0, 0, 0);
     m_targetEdit->setMinimumHeight(30);
+    m_targetEdit->setContextMenuPolicy(Qt::NoContextMenu);
     connect(m_targetEdit, &QLineEdit::returnPressed, this, &MainWindow::onStartStop);
 
     auto* targetWrap = new QWidget(this);
@@ -129,6 +130,7 @@ void MainWindow::setupUi()
     m_pingSizeBox->setFixedWidth(70);
     m_pingSizeBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
     m_pingSizeBox->setFrame(false); m_pingSizeBox->setMinimumHeight(30);
+    m_pingSizeBox->setContextMenuPolicy(Qt::NoContextMenu);
 
     auto* pingSizeWrap = new QWidget(this);
     pingSizeWrap->setFixedWidth(70); pingSizeWrap->setFixedHeight(32);
@@ -202,6 +204,7 @@ void MainWindow::setupUi()
     m_table->setObjectName("mtrTable");
     m_table->setHorizontalHeaderLabels(COLUMNS);
     m_table->horizontalHeader()->setHighlightSections(false);
+    m_table->setContextMenuPolicy(Qt::NoContextMenu);
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     m_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
