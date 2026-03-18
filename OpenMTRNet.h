@@ -225,12 +225,18 @@ public:
             // Destination found — show exactly the discovered hops
             rows = maxHops;
         } else {
-            // Destination not yet found — show only hops that have sent at
-            // least one packet so table grows naturally instead of 30 empty rows
+            // Destination not yet found — show only hops that have actually
+            // responded (non-zero address or at least one reply received).
+            // This lets the table grow naturally as hops are discovered,
+            // instead of showing 30 empty rows immediately.
             rows = 0;
-            for (int i = 0; i < MAX_HOPS; ++i)
-                if (m_net->GetXmit(i) > 0) rows = i + 1;
-            if (rows == 0) rows = MAX_HOPS;
+            for (int i = 0; i < MAX_HOPS; ++i) {
+                sockaddr* sa = m_net->GetAddr(i);
+                bool hasAddr = (sa->sa_family == AF_INET || sa->sa_family == AF_INET6);
+                bool hasReply = m_net->GetReturned(i) > 0;
+                if (hasAddr || hasReply) rows = i + 1;
+            }
+            if (rows == 0) rows = 1; // show at least first row
         }
 
         for (int i = 0; i < rows; ++i) {
