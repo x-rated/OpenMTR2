@@ -373,6 +373,14 @@ int WinMTRNet::GetMax()
     if (host[0].addr6.sin6_family == AF_INET6) {
         for (; max < MAX_HOPS && memcmp(&host[max++].addr6.sin6_addr, &last_remote_addr6, sizeof(in6_addr)););
         if (max == MAX_HOPS) {
+            // Trim trailing empty (zero) hops first
+            while (max > 1
+                && !(host[max-1].addr6.sin6_addr.u.Word[0] | host[max-1].addr6.sin6_addr.u.Word[1]
+                   | host[max-1].addr6.sin6_addr.u.Word[2] | host[max-1].addr6.sin6_addr.u.Word[3]
+                   | host[max-1].addr6.sin6_addr.u.Word[4] | host[max-1].addr6.sin6_addr.u.Word[5]
+                   | host[max-1].addr6.sin6_addr.u.Word[6] | host[max-1].addr6.sin6_addr.u.Word[7]))
+                --max;
+            // Then trim trailing duplicate non-zero hops
             while (max > 1
                 && !memcmp(&host[max-1].addr6.sin6_addr, &host[max-2].addr6.sin6_addr, sizeof(in6_addr))
                 && (host[max-1].addr6.sin6_addr.u.Word[0] | host[max-1].addr6.sin6_addr.u.Word[1]
@@ -384,6 +392,10 @@ int WinMTRNet::GetMax()
     } else {
         for (; max < MAX_HOPS && host[max++].addr.sin_addr.s_addr != last_remote_addr.s_addr;);
         if (max == MAX_HOPS) {
+            // Trim trailing empty hops first
+            while (max > 1 && !host[max-1].addr.sin_addr.s_addr)
+                --max;
+            // Then trim trailing duplicate non-zero hops
             while (max > 1
                 && host[max-1].addr.sin_addr.s_addr == host[max-2].addr.sin_addr.s_addr
                 && host[max-1].addr.sin_addr.s_addr)
