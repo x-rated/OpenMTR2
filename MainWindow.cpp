@@ -553,7 +553,7 @@ void MainWindow::onElapsedTimer()
 void MainWindow::onWarmupEnd()
 {
     if (!m_net) return;
-    constexpr qint64 kWarmupDeadlineMs = 4000;
+    constexpr qint64 kWarmupDeadlineMs = 8000;
     const bool deadlineReached = m_elapsed.elapsed() >= kWarmupDeadlineMs;
 
     int maxHops = m_net->GetMax();

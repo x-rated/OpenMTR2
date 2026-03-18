@@ -120,27 +120,23 @@ void OpenMTRNet::DoTrace(sockaddr* dest)
         host[0].addr6.sin6_family = AF_INET6;
         last_remote_addr6 = ((sockaddr_in6*)dest)->sin6_addr;
 
-        for (; hops < MAX_HOPS;) {
+        for (; hops < MAX_HOPS; ++hops) {
             auto* t = new trace_thread6;
             t->address = *(sockaddr_in6*)dest;
-            t->net  = this;
+            t->net     = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread6, t, 0, nullptr);
-            Sleep(30);
-            if (++hops > (unsigned char)GetMax()) break;
         }
     } else {
         host[0].addr.sin_family = AF_INET;
         last_remote_addr = ((sockaddr_in*)dest)->sin_addr;
 
-        for (; hops < MAX_HOPS;) {
+        for (; hops < MAX_HOPS; ++hops) {
             auto* t = new trace_thread;
             t->address = ((sockaddr_in*)dest)->sin_addr;
-            t->net  = this;
+            t->net     = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread, t, 0, nullptr);
-            Sleep(30);
-            if (++hops > (unsigned char)GetMax()) break;
         }
     }
 
