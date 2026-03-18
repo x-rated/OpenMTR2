@@ -89,6 +89,6 @@ OpenMTR is built on the shoulders of:
 
 ## License
 
-GPL v2 — see [LICENSE](LICENSE).
+GPL v2 — see [LICENSE](LICENSE). 
 
 The network engine is derived from WinMTR Redux (White-Tiger) and original WinMTR (Appnor MSP), both GPL v2.
