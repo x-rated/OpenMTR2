@@ -118,7 +118,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
-    <ClCompile Include="WinMTRNet.cpp" />
+    <ClCompile Include="OpenMTRNet.cpp" />
     <ClCompile Include="$(IntDir)moc_MainWindow.cpp" />
     <ClCompile Include="$(IntDir)qrc_resources.cpp" />
   </ItemGroup>
@@ -131,7 +131,7 @@
   <!-- Headers -->
   <ItemGroup>
     <ClInclude Include="MainWindow.h" />
-    <ClInclude Include="WinMTRNet.h" />
+    <ClInclude Include="OpenMTRNet.h" />
     <ClInclude Include="CrashHandler.h" />
   </ItemGroup>
 

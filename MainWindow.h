@@ -18,8 +18,8 @@
 #include <ws2ipdef.h>
 #include <winreg.h>
 
-// WinMTRNet.h now contains IWinMTROptionsProvider and WinMTRNetWrapper
-#include "WinMTRNet.h"
+// OpenMTRNet.h now contains IOpenMTROptionsProvider and OpenMTRNetWrapper
+#include "OpenMTRNet.h"
 
 #include <memory>
 #include <algorithm>
@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <string>
 
-class MainWindow : public QMainWindow, public IWinMTROptionsProvider
+class MainWindow : public QMainWindow, public IOpenMTROptionsProvider
 {
     Q_OBJECT
 
@@ -78,7 +78,7 @@ private:
     QTableWidget*   m_table        = nullptr;
 
     // State
-    std::shared_ptr<WinMTRNetWrapper>   m_net;
+    std::shared_ptr<OpenMTRNetWrapper>   m_net;
     std::stop_source                    m_stopSource;
     std::vector<std::array<int, 2>>     m_baseline;
     bool    m_tracing  = false;

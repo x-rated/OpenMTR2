@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 
     // Initialise Winsock once for the lifetime of the process.
     // This must happen before any getaddrinfo / DNS calls, including
-    // the ones in MainWindow::onStartStop before WinMTRNet is created.
+    // the ones in MainWindow::onStartStop before OpenMTRNet is created.
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 

@@ -489,7 +489,7 @@ void MainWindow::onStartStop()
         if (target.isEmpty()) return;
 
         // Create fresh wrapper for each trace
-        m_net = std::make_shared<WinMTRNetWrapper>(this);
+        m_net = std::make_shared<OpenMTRNetWrapper>(this);
 
         SOCKADDR_INET addr = {};
         struct addrinfo hints = {}, *res = nullptr;
