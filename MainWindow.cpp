@@ -556,16 +556,20 @@ void MainWindow::onWarmupEnd()
     constexpr qint64 kWarmupDeadlineMs = 8000;
     const bool deadlineReached = m_elapsed.elapsed() >= kWarmupDeadlineMs;
 
-    int maxHops = m_net->GetMax();
+    // Get maxHops and state in one consistent snapshot to avoid TOCTOU races
+    // where GetMax() returns different values on successive calls.
+    int maxHops   = m_net->GetMax();
+    auto state    = m_net->getCurrentState();
+    int checkHops = std::min(maxHops, (int)state.size());
+
     if (maxHops >= 30 && !deadlineReached) {
         const int gen = m_warmupGen;
         QTimer::singleShot(250, this, [this, gen]() { if (m_warmupGen == gen) onWarmupEnd(); });
         return;
     }
 
-    auto state = m_net->getCurrentState();
     if (!deadlineReached) {
-        for (int i = 0; i < maxHops; ++i) {
+        for (int i = 0; i < checkHops; ++i) {
             if (state[i].xmit == 0) {
                 const int gen = m_warmupGen;
                 QTimer::singleShot(250, this, [this, gen]() { if (m_warmupGen == gen) onWarmupEnd(); });
