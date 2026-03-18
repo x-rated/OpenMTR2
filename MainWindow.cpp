@@ -641,10 +641,10 @@ void MainWindow::updateTable()
 
             if (auto* lossItem = m_table->item(i, 4)) {
                 QColor fg;
-                if      (loss == 0)  fg = m_darkMode ? QColor(0x4c,0xd9,0x6e) : QColor(0x1a,0x7a,0x34);
-                else if (loss < 5)   fg = m_darkMode ? QColor(0xf5,0xc5,0x42) : QColor(0x92,0x6a,0x00);
-                else if (loss < 20)  fg = m_darkMode ? QColor(0xff,0x8c,0x42) : QColor(0xb8,0x4a,0x00);
-                else                 fg = m_darkMode ? QColor(0xff,0x5f,0x5f) : QColor(0xb8,0x1c,0x1c);
+                if      (loss == 0)  fg = m_darkMode ? QColor(0x4c,0xaf,0x50) : QColor(0x2e,0x7d,0x32);
+                else if (loss < 5)   fg = m_darkMode ? QColor(0xff,0xee,0x58) : QColor(0xf5,0x7f,0x17);
+                else if (loss < 20)  fg = QColor(0xff,0xa7,0x26);
+                else                 fg = QColor(0xef,0x53,0x50);
                 lossItem->setForeground(fg);
             }
         }
