@@ -18,7 +18,8 @@
 #include <ws2ipdef.h>
 #include <winreg.h>
 
-// WinMTRNetWrapper.h also defines IWinMTROptionsProvider — include it first
+// WinMTRNet.h now contains IWinMTROptionsProvider and WinMTRNetWrapper
+#include "WinMTRNet.h"
 
 #include <memory>
 #include <algorithm>
