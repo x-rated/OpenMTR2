@@ -5,7 +5,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QWidget>
 #include <QtCore/QString>
 #include <QtCore/QTimer>
 #include <QtGui/QKeyEvent>
@@ -17,60 +17,6 @@
 #include <windows.h>
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
-
-// Custom frame that paints its own background:
-// - full rounded rect in base color
-// - footer strip in darker color, clipped to the same rounded rect
-// No child widget backgrounds needed — all painting in one pass.
-class DialogFrame : public QWidget {
-public:
-    explicit DialogFrame(bool dark, QWidget* parent = nullptr)
-        : QWidget(parent), m_dark(dark)
-    {
-        setAttribute(Qt::WA_StyledBackground, false);
-        setAttribute(Qt::WA_OpaquePaintEvent, false);
-    }
-
-    void setFooterTop(int y) { m_footerTop = y; update(); }
-
-protected:
-    void paintEvent(QPaintEvent*) override
-    {
-        QPainter p(this);
-        p.setRenderHint(QPainter::Antialiasing);
-
-        QPainterPath clip;
-        clip.addRoundedRect(rect(), 12, 12);
-        p.setClipPath(clip);
-
-        // Base background
-        p.fillRect(rect(), m_dark ? QColor(28, 28, 32, 240) : QColor(249, 249, 249, 247));
-
-        // Footer darker strip (only if footer position is known)
-        if (m_footerTop > 0) {
-            QRect footer(0, m_footerTop, width(), height() - m_footerTop);
-            p.fillRect(footer, m_dark ? QColor(0, 0, 0, 50) : QColor(0, 0, 0, 10));
-        }
-
-        // Separator line
-        if (m_footerTop > 0) {
-            p.fillRect(0, m_footerTop - 1, width(), 1,
-                m_dark ? QColor(255, 255, 255, 30) : QColor(0, 0, 0, 20));
-        }
-
-        // Border
-        p.setClipping(false);
-        QPen pen(m_dark ? QColor(255,255,255,20) : QColor(0,0,0,20));
-        pen.setWidth(1);
-        p.setPen(pen);
-        p.setBrush(Qt::NoBrush);
-        p.drawRoundedRect(QRectF(rect()).adjusted(0.5,0.5,-0.5,-0.5), 12, 12);
-    }
-
-private:
-    bool m_dark;
-    int  m_footerTop = 0;
-};
 
 class MicaDialog : public QDialog
 {
@@ -86,21 +32,32 @@ private:
     explicit MicaDialog(QWidget* parent, const QString& title,
                         const QString& message, bool darkMode)
         : QDialog(parent, Qt::Dialog | Qt::FramelessWindowHint)
+        , m_dark(darkMode)
     {
         setAttribute(Qt::WA_TranslucentBackground);
         setModal(true);
         setFixedWidth(400);
 
-        auto* frame = new DialogFrame(darkMode, this);
+        // ── Content card (title + body, rounded top, lighter bg) ──────────
+        m_card = new QWidget(this);
+        m_card->setObjectName("micaCard");
 
-        auto* titleLabel = new QLabel(title, frame);
+        auto* titleLabel = new QLabel(title, m_card);
         titleLabel->setObjectName("micaTitle");
+        titleLabel->setWordWrap(false);
 
-        auto* bodyLabel = new QLabel(message, frame);
+        auto* bodyLabel = new QLabel(message, m_card);
         bodyLabel->setObjectName("micaBody");
         bodyLabel->setWordWrap(true);
 
-        auto* closeBtn = new QPushButton("Close", frame);
+        auto* cardLayout = new QVBoxLayout(m_card);
+        cardLayout->setContentsMargins(24, 20, 24, 20);
+        cardLayout->setSpacing(8);
+        cardLayout->addWidget(titleLabel);
+        cardLayout->addWidget(bodyLabel);
+
+        // ── Footer (button row, same bg as outer frame = toolbar feel) ────
+        auto* closeBtn = new QPushButton("Close", this);
         closeBtn->setObjectName("micaClose");
         closeBtn->setFixedWidth(82);
         closeBtn->setDefault(true);
@@ -112,44 +69,42 @@ private:
         btnRow->addStretch();
         btnRow->addWidget(closeBtn);
 
-        // Spacer widget that tells DialogFrame where footer starts
-        auto* footerSpacer = new QWidget(frame);
-        footerSpacer->setFixedHeight(0);
-        footerSpacer->setObjectName("footerMarker");
-
-        auto* layout = new QVBoxLayout(frame);
-        layout->setContentsMargins(24, 20, 24, 0);
+        // ── Outer layout ──────────────────────────────────────────────────
+        auto* layout = new QVBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(0);
-        layout->addWidget(titleLabel);
-        layout->addSpacing(8);
-        layout->addWidget(bodyLabel);
-        layout->addSpacing(20);
-        layout->addWidget(footerSpacer); // marks footer top
-        layout->addSpacing(10);
-        layout->addLayout(btnRow);
-        layout->addSpacing(12);
+        layout->addWidget(m_card);
 
-        auto* outer = new QVBoxLayout(this);
-        outer->setContentsMargins(0, 0, 0, 0);
-        outer->addWidget(frame);
+        // Footer padding inside the outer dialog
+        auto* footerWrap = new QVBoxLayout;
+        footerWrap->setContentsMargins(24, 10, 24, 14);
+        footerWrap->addLayout(btnRow);
+        layout->addLayout(footerWrap);
 
-        // Tell frame where footer starts after layout settles
-        QTimer::singleShot(0, this, [frame, footerSpacer]() {
-            frame->setFooterTop(footerSpacer->mapTo(frame, QPoint(0,0)).y());
-        });
-
-        // Apply button styles
+        // ── Styles ────────────────────────────────────────────────────────
         if (darkMode) {
-            frame->setStyleSheet(R"(
-                QLabel#micaTitle {
+            // Card: slightly lighter than outer
+            m_card->setStyleSheet(R"(
+                #micaCard {
+                    background-color: rgba(48, 48, 54, 0.97);
+                    border-radius: 12px 12px 0 0;
+                }
+                #micaTitle {
                     color: #ffffff;
                     font-family: "Segoe UI"; font-size: 20px; font-weight: 600;
                     background: transparent;
                 }
-                QLabel#micaBody {
+                #micaBody {
                     color: rgba(255,255,255,0.75);
                     font-family: "Segoe UI"; font-size: 14px;
                     background: transparent;
+                }
+            )");
+            setStyleSheet(R"(
+                MicaDialog {
+                    background-color: rgba(28, 28, 32, 0.97);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 12px;
                 }
                 QPushButton#micaClose {
                     background-color: rgba(255,255,255,0.06);
@@ -163,16 +118,28 @@ private:
                 QPushButton#micaClose:pressed { background-color: rgba(255,255,255,0.04); }
             )");
         } else {
-            frame->setStyleSheet(R"(
-                QLabel#micaTitle {
+            // Card: white content area on top of light-gray footer base
+            m_card->setStyleSheet(R"(
+                #micaCard {
+                    background-color: rgba(255, 255, 255, 0.98);
+                    border-radius: 12px 12px 0 0;
+                }
+                #micaTitle {
                     color: #1a1a1a;
                     font-family: "Segoe UI"; font-size: 20px; font-weight: 600;
                     background: transparent;
                 }
-                QLabel#micaBody {
+                #micaBody {
                     color: #1a1a1a;
                     font-family: "Segoe UI"; font-size: 14px;
                     background: transparent;
+                }
+            )");
+            setStyleSheet(R"(
+                MicaDialog {
+                    background-color: rgba(238, 238, 238, 0.98);
+                    border: 1px solid rgba(0,0,0,0.10);
+                    border-radius: 12px;
                 }
                 QPushButton#micaClose {
                     background-color: rgba(255,255,255,0.7);
@@ -218,4 +185,7 @@ private:
         DWM_SYSTEMBACKDROP_TYPE backdrop = DWMSBT_MAINWINDOW;
         DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop, sizeof(backdrop));
     }
+
+    bool    m_dark;
+    QWidget* m_card = nullptr;
 };
