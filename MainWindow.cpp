@@ -1,5 +1,4 @@
 #include "MainWindow.h"
-#include "WinMTRNetWrapper.h"
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QVBoxLayout>
@@ -19,7 +18,6 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QPointer>
 #include <QtCore/QTimer>
-#include "MicaDialog.h"
 #include <dwmapi.h>
 #include <windows.h>
 #include <windns.h>
