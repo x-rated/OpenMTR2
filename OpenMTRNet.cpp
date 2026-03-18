@@ -414,7 +414,11 @@ void OpenMTRNet::SetAddr6(int at, IPV6_ADDRESS_EX addrex)
     bool empty = !(w[0]|w[1]|w[2]|w[3]|w[4]|w[5]|w[6]|w[7]);
     if (empty) {
         host[at].addr6.sin6_family = AF_INET6;
-        host[at].addr6.sin6_addr   = *(in6_addr*)&addrex.sin6_addr;
+        // IPV6_ADDRESS_EX.sin6_addr is USHORT[8] in network byte order.
+        // Copy byte-by-byte into in6_addr to avoid endianness issues.
+        for (int i = 0; i < 8; ++i) {
+            host[at].addr6.sin6_addr.u.Word[i] = addrex.sin6_addr[i];
+        }
         auto* dnt   = new dns_resolver_thread;
         dnt->index  = at;
         dnt->net = this;
