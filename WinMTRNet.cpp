@@ -126,8 +126,8 @@ void WinMTRNet::DoTrace(sockaddr* dest)
             t->winmtr  = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread6, t, 0, nullptr);
-            Sleep(30);
-            if (++hops > (unsigned char)GetMax()) break;
+            Sleep(5);
+            ++hops;
         }
     } else {
         host[0].addr.sin_family = AF_INET;
@@ -139,8 +139,8 @@ void WinMTRNet::DoTrace(sockaddr* dest)
             t->winmtr  = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread, t, 0, nullptr);
-            Sleep(30);
-            if (++hops > (unsigned char)GetMax()) break;
+            Sleep(5);
+            ++hops;
         }
     }
 
