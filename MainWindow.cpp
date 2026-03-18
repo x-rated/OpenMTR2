@@ -553,37 +553,18 @@ void MainWindow::onElapsedTimer()
 void MainWindow::onWarmupEnd()
 {
     if (!m_net) return;
-    constexpr qint64 kMinOverlayMs  = 2000;
-    constexpr qint64 kFallbackMs    = 2000;
-    const qint64     elapsed        = m_elapsed.elapsed();
+    constexpr qint64 kWarmupDeadlineMs = 8000;
+    const bool deadlineReached = m_elapsed.elapsed() >= kWarmupDeadlineMs;
 
-    // Poll GetMax() from the start — dismiss as soon as destination is found,
-    // but enforce a minimum overlay time so fast routes don't flash.
-    // If GetMax() never finds the destination (ICMP blocked), fall back to
-    // showing the table after kFallbackMs and let rows grow naturally.
     int maxHops = m_net->GetMax();
-    const bool destinationFound  = maxHops < 30;
-    const bool minimumElapsed    = elapsed >= kMinOverlayMs;
-    const bool fallbackElapsed   = elapsed >= kFallbackMs;
-
-    if (!destinationFound && !fallbackElapsed) {
-        // Still discovering and fallback not reached — keep waiting
+    if (maxHops >= 30 && !deadlineReached) {
         const int gen = m_warmupGen;
         QTimer::singleShot(250, this, [this, gen]() { if (m_warmupGen == gen) onWarmupEnd(); });
         return;
     }
 
-    if (destinationFound && !minimumElapsed) {
-        // Found destination but haven't shown overlay long enough yet
-        const int gen = m_warmupGen;
-        QTimer::singleShot(250, this, [this, gen]() { if (m_warmupGen == gen) onWarmupEnd(); });
-        return;
-    }
-
-    // Either destination found + minimum elapsed, or fallback elapsed.
-    // Wait for all known hops to have sent at least one ping.
     auto state = m_net->getCurrentState();
-    if (destinationFound) {
+    if (!deadlineReached) {
         for (int i = 0; i < maxHops; ++i) {
             if (state[i].xmit == 0) {
                 const int gen = m_warmupGen;
@@ -612,11 +593,23 @@ void MainWindow::updateTable()
 {
     if (!m_net) return;
     auto state = m_net->getCurrentState();
-    int rows = static_cast<int>(state.size());
+
+    // Count visible rows — skip trailing hops with no address and no replies.
+    // This avoids showing 30 empty rows when the destination blocks ICMP.
+    // Hops in the middle of the route that are silent still show as rows
+    // because they have responding hops after them.
+    int rows = 0;
+    for (int i = 0; i < (int)state.size(); ++i) {
+        const auto& h = state[i];
+        bool hasAddr  = (h.addr.si_family != AF_UNSPEC);
+        bool hasData  = (h.returned > 0);
+        if (hasAddr || hasData) rows = i + 1;
+    }
+    if (rows == 0 && !state.empty()) rows = 1;
     m_table->setRowCount(rows);
 
     for (int i = 0; i < rows; ++i) {
-        const auto& h = state[i];
+        const auto& h   = state[i];
         QString ip      = QString::fromStdWString(addr_to_wstring(h.addr));
         bool hasAddr    = (h.addr.si_family != AF_UNSPEC);
         QString name    = hasAddr ? QString::fromStdWString(h.getName()) : "?";
