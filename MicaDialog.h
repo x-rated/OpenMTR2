@@ -111,14 +111,10 @@ private:
                     background: transparent;
                 }
                 #micaSep {
-                    background-color: rgba(255,255,255,0.06);
+                    background-color: rgba(255,255,255,0.15);
                     border: none;
                 }
-                #micaFooter {
-                    background-color: rgba(0,0,0,0.25);
-                    border-bottom-left-radius: 12px;
-                    border-bottom-right-radius: 12px;
-                }
+                #micaFooter { background-color: rgba(0,0,0,0.18); margin: 0 1px 1px 1px; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
                 #micaClose {
                     background-color: rgba(255,255,255,0.06);
                     color: #ffffff;
@@ -144,19 +140,15 @@ private:
                     background: transparent;
                 }
                 #micaBody {
-                    color: rgba(0,0,0,0.55);
+                    color: #1a1a1a;
                     font-family: "Segoe UI"; font-size: 14px;
                     background: transparent;
                 }
                 #micaSep {
-                    background-color: rgba(0,0,0,0.06);
+                    background-color: rgba(0,0,0,0.09);
                     border: none;
                 }
-                #micaFooter {
-                    background-color: rgba(0,0,0,0.04);
-                    border-bottom-left-radius: 12px;
-                    border-bottom-right-radius: 12px;
-                }
+                #micaFooter { background-color: rgba(0,0,0,0.04); margin: 0 1px 1px 1px; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
                 #micaClose {
                     background-color: rgba(255,255,255,0.7);
                     color: #1a1a1a;
