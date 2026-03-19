@@ -126,7 +126,6 @@ void OpenMTRNet::DoTrace(sockaddr* dest)
             t->net     = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread6, t, 0, nullptr);
-            Sleep(5);
         }
     } else {
         host[0].addr.sin_family = AF_INET;
@@ -138,7 +137,6 @@ void OpenMTRNet::DoTrace(sockaddr* dest)
             t->net     = this;
             t->ttl     = hops + 1;
             hThreads[hops] = (HANDLE)_beginthreadex(nullptr, 0, TraceThread, t, 0, nullptr);
-            Sleep(5);
         }
     }
 
@@ -171,6 +169,9 @@ static unsigned WINAPI TraceThread(void* p)
         ICMP_ECHO_REPLY icmp_echo_reply;
         char achRepData[sizeof(ICMPECHO) + 8192];
     };
+
+    // Stagger initial send by TTL to avoid simultaneous flood on intermediate hops
+    Sleep((DWORD)(current->ttl - 1) * 50);
 
     while (wn->tracing) {
         if (current->ttl > wn->GetMax()) break;
@@ -228,6 +229,9 @@ static unsigned WINAPI TraceThread6(void* p)
         ICMPV6_ECHO_REPLY icmpv6_echo_reply;
         char achRepData[sizeof(PICMPV6_ECHO_REPLY) + 8192];
     };
+
+    // Stagger initial send by TTL to avoid simultaneous flood on intermediate hops
+    Sleep((DWORD)(current->ttl - 1) * 50);
 
     while (wn->tracing) {
         if (current->ttl > wn->GetMax()) break;
