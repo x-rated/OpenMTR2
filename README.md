@@ -51,6 +51,7 @@ Date    : 2026-03-17 03:20:05
 - **Per-hop statistics** — ASN, hostname, IP address, packet loss, sent/received counts, best/avg/worst/last latency
 - **ASN lookup** — Autonomous System Numbers resolved automatically via Team Cymru's DNS service
 - **IPv4 & IPv6** — full dual-stack support with auto-fallback if the target can't be resolved with the chosen protocol
+- **Superior IPv6 route discovery** — staggered TTL probing prevents intermediate routers from rate-limiting ICMP replies, discovering routes that even Windows tracert misses
 - **Configurable ping size** — adjust ICMP payload from 64 to 8192 bytes
 - **Light & dark themes** — switches instantly; Windows 11 title bar follows your choice via the native DWM API; auto-detects system theme on launch
 - **Export & copy** — save results as `.txt` or `.csv`, or copy the full report to clipboard; double-click any cell to copy its value
@@ -70,8 +71,8 @@ Date    : 2026-03-17 03:20:05
 ## Building
 
 1. Install [Qt 6.10+](https://www.qt.io/download) with the `msvc2022_64` component
-2. If not using the `QT_ROOT_DIR` environment variable, update `QtDir` in `OpenMTR2.vcxproj` to match your Qt installation path
-3. Open `OpenMTR2.sln` in Visual Studio 2022
+2. If not using the `QT_ROOT_DIR` environment variable, update `QtDir` in `OpenMTR.vcxproj` to match your Qt installation path
+3. Open `OpenMTR.sln` in Visual Studio 2022
 4. Build → **Release x64**
 
 Releases are also built automatically via GitHub Actions on every push.
@@ -89,6 +90,6 @@ OpenMTR is built on the shoulders of:
 
 ## License
 
-GPL v2 — see [LICENSE](LICENSE). 
+GPL v2 — see [LICENSE](LICENSE).
 
 The network engine is derived from WinMTR Redux (White-Tiger) and original WinMTR (Appnor MSP), both GPL v2.
