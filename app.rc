@@ -1,0 +1,4 @@
+// app.rc — embeds app.ico into the executable so Windows Explorer shows it
+#include <windows.h>
+
+IDI_APPICON ICON "app.ico"
