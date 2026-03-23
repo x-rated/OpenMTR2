@@ -435,9 +435,20 @@ QString MainWindow::getCachedASN(const QString& ip, bool ipv6) const
     auto key = ip.toStdString();
     auto it  = m_asnCache.find(key);
     if (it != m_asnCache.end()) return it->second.isEmpty() ? "-" : it->second;
-    QString asn = lookupASN(ip, ipv6);
-    m_asnCache[key] = asn;
-    return asn.isEmpty() ? "-" : asn;
+
+    // Fire background lookup — return "-" until result arrives
+    if (m_asnPending.insert(key).second) {
+        QPointer<MainWindow> self(const_cast<MainWindow*>(this));
+        std::thread([self, ip, ipv6, key]() {
+            QString asn = lookupASN(ip, ipv6);
+            QMetaObject::invokeMethod(qApp, [self, key, asn]() {
+                if (!self) return;
+                self->m_asnCache[key] = asn;
+                self->m_asnPending.erase(key);
+            }, Qt::QueuedConnection);
+        }).detach();
+    }
+    return "-";
 }
 
 void MainWindow::onStartStop()
@@ -460,6 +471,7 @@ void MainWindow::onStartStop()
         if (m_net) updateTable();
         m_baseline.clear();
         m_asnCache.clear();
+        m_asnPending.clear();
         // keep table visible after stopping — only go idle if discovery was never completed
 
         m_startStopBtn->setEnabled(false);
@@ -484,63 +496,78 @@ void MainWindow::onStartStop()
         QString target = m_targetEdit->text().trimmed();
         if (target.isEmpty()) return;
 
-        // Create fresh wrapper for each trace
-        m_net = std::make_shared<OpenMTRNetWrapper>(this);
-
-        SOCKADDR_INET addr = {};
-        struct addrinfo hints = {}, *res = nullptr;
-        // Use AF_UNSPEC to request both A and AAAA records in one query —
-        // much faster than AF_INET6 alone since the resolver handles both
-        // record types in parallel. We then pick the address matching the
-        // requested family from the results.
-        const int wantFamily = m_ipv6Check->isChecked() ? AF_INET6 : AF_INET;
-        hints.ai_family = AF_UNSPEC;
-        int rc = getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res);
-        if (rc != 0 || !res) {
-            MicaDialog::show(this, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), m_darkMode);
-            return;
-        }
-
-        // First pass: find exact family match
-        addrinfo* match = nullptr;
-        for (addrinfo* r = res; r; r = r->ai_next)
-            if (r->ai_family == wantFamily) { match = r; break; }
-
-        // Second pass: if exact family not found, auto-switch to whatever is available
-        if (!match) {
-            for (addrinfo* r = res; r; r = r->ai_next)
-                if (r->ai_family == AF_INET || r->ai_family == AF_INET6) { match = r; break; }
-            if (match) m_ipv6Check->setChecked(match->ai_family == AF_INET6);
-        }
-
-        if (!match) {
-            freeaddrinfo(res);
-            MicaDialog::show(this, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), m_darkMode);
-            return;
-        }
-        memcpy(&addr, match->ai_addr,
-            match->ai_addrlen < sizeof(addr) ? match->ai_addrlen : sizeof(addr));
-        freeaddrinfo(res);
-
-        m_tracing  = true;
-        m_counting = false;
-        m_table->setRowCount(0);
-        m_stack->setCurrentIndex(1);
-        m_copyBtn->setEnabled(false);
-        m_exportBtn->setEnabled(false);
-        m_startStopBtn->setText("Stop");
-        m_startStopBtn->setProperty("tracing", true);
-        m_startStopBtn->style()->polish(m_startStopBtn);
+        // Disable UI immediately so window stays responsive during async init
+        m_startStopBtn->setEnabled(false);
         m_targetEdit->setEnabled(false);
         m_ipv6Check->setEnabled(false);
         m_pingSizeBox->setEnabled(false);
 
-        [[maybe_unused]] auto trace = m_net->DoTrace(m_stopSource.get_token(), addr);
-        m_refreshTimer->start();
-        m_elapsedTimer->start();
-        m_warmupTimer->start();
-        m_elapsed.start();
-        ++m_warmupGen;
+        const int wantFamily = m_ipv6Check->isChecked() ? AF_INET6 : AF_INET;
+        const bool darkMode  = m_darkMode;
+        IOpenMTROptionsProvider* provider = this;
+        QPointer<MainWindow> self(this);
+
+        // Yield to event loop so UI repaints before thread starts
+        QTimer::singleShot(0, this, [self, provider, target, wantFamily, darkMode]() {
+            if (!self) return;
+            std::thread([self, provider, target, wantFamily, darkMode]() {
+                // Init engine (LoadLibrary + IcmpCreateFile) off UI thread
+                auto net = std::make_shared<OpenMTRNetWrapper>(provider);
+
+                // Resolve DNS off UI thread
+                struct addrinfo hints = {}, *res = nullptr;
+                hints.ai_family = AF_UNSPEC;
+                bool resolved = false;
+                bool ipv6 = (wantFamily == AF_INET6);
+                SOCKADDR_INET addr = {};
+
+                if (getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res) == 0 && res) {
+                    addrinfo* match = nullptr;
+                    for (addrinfo* r = res; r; r = r->ai_next)
+                        if (r->ai_family == wantFamily) { match = r; break; }
+                    if (!match)
+                        for (addrinfo* r = res; r; r = r->ai_next)
+                            if (r->ai_family == AF_INET || r->ai_family == AF_INET6) { match = r; break; }
+                    if (match) {
+                        memcpy(&addr, match->ai_addr,
+                            match->ai_addrlen < sizeof(addr) ? match->ai_addrlen : sizeof(addr));
+                        ipv6 = (match->ai_family == AF_INET6);
+                        resolved = true;
+                    }
+                    freeaddrinfo(res);
+                }
+
+                QMetaObject::invokeMethod(qApp, [self, net, target, addr, resolved, ipv6, darkMode]() {
+                    if (!self) return;
+                    if (!resolved) {
+                        self->m_startStopBtn->setEnabled(true);
+                        self->m_targetEdit->setEnabled(true);
+                        self->m_ipv6Check->setEnabled(true);
+                        self->m_pingSizeBox->setEnabled(true);
+                        MicaDialog::show(self, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), darkMode);
+                        return;
+                    }
+                    self->m_ipv6Check->setChecked(ipv6);
+                    self->m_net      = net;
+                    self->m_tracing  = true;
+                    self->m_counting = false;
+                    self->m_table->setRowCount(0);
+                    self->m_stack->setCurrentIndex(1);
+                    self->m_copyBtn->setEnabled(false);
+                    self->m_exportBtn->setEnabled(false);
+                    self->m_startStopBtn->setText("Stop");
+                    self->m_startStopBtn->setProperty("tracing", true);
+                    self->m_startStopBtn->style()->polish(self->m_startStopBtn);
+                    self->m_startStopBtn->setEnabled(true);
+                    [[maybe_unused]] auto trace = self->m_net->DoTrace(self->m_stopSource.get_token(), addr);
+                    self->m_refreshTimer->start();
+                    self->m_elapsedTimer->start();
+                    self->m_warmupTimer->start();
+                    self->m_elapsed.start();
+                    ++self->m_warmupGen;
+                }, Qt::QueuedConnection);
+            }).detach();
+        });
     }
 }
 
@@ -585,20 +612,41 @@ void MainWindow::onWarmupEnd()
         }
     }
 
+    // Prefetch ASNs for all known hops during the 1100ms wait
+    {
+        auto st = m_net->getCurrentState();
+        for (auto& h : st)
+            if (h.addr.si_family != AF_UNSPEC)
+                getCachedASN(QString::fromStdWString(addr_to_wstring(h.addr)),
+                             h.addr.si_family == AF_INET6);
+    }
+
     const int gen = m_warmupGen;
+    // After 1100ms, poll until all ASN lookups complete (or 4s extra timeout)
     QTimer::singleShot(1100, this, [this, gen]() {
         if (!m_net || !m_tracing || m_warmupGen != gen) return;
-        auto st = m_net->getCurrentState();
-        m_baseline.clear();
-        m_asnCache.clear();
-        for (auto& h : st)
-            m_baseline.push_back({h.xmit, h.returned});
-        m_counting = true;
-        m_elapsed.restart();
-        m_stack->setCurrentIndex(2);
-        m_copyBtn->setEnabled(true);
-        m_exportBtn->setEnabled(true);
-        updateTable();
+        auto* pollAsn = new QTimer(this);
+        pollAsn->setInterval(150);
+        connect(pollAsn, &QTimer::timeout, this, [this, gen, pollAsn]() {
+            if (!m_net || !m_tracing || m_warmupGen != gen) {
+                pollAsn->stop(); pollAsn->deleteLater(); return;
+            }
+            // Wait for pending ASNs, but cap at 4s extra
+            if (!m_asnPending.empty() && m_elapsed.elapsed() < 12000) return;
+            pollAsn->stop(); pollAsn->deleteLater();
+            auto st = m_net->getCurrentState();
+            m_baseline.clear();
+            m_asnPending.clear();
+            for (auto& h : st)
+                m_baseline.push_back({h.xmit, h.returned});
+            m_counting = true;
+            m_elapsed.restart();
+            m_stack->setCurrentIndex(2);
+            m_copyBtn->setEnabled(true);
+            m_exportBtn->setEnabled(true);
+            updateTable();
+        });
+        pollAsn->start();
     });
 }
 

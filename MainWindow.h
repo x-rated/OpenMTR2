@@ -27,7 +27,9 @@
 #include <array>
 #include <stop_token>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
+#include <thread>
 
 class MainWindow : public QMainWindow, public IOpenMTROptionsProvider
 {
@@ -90,6 +92,7 @@ private:
     int     m_warmupGen    = 0;
     QElapsedTimer m_elapsed;
     mutable std::unordered_map<std::string, QString> m_asnCache;
+    mutable std::unordered_set<std::string>           m_asnPending;
 };
 
 // ── Dialog (formerly MicaDialog.h) ──────────────────────────────────────────
