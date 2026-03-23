@@ -636,7 +636,6 @@ void MainWindow::onWarmupEnd()
             pollAsn->stop(); pollAsn->deleteLater();
             auto st = m_net->getCurrentState();
             m_baseline.clear();
-            m_asnCache.clear();
             m_asnPending.clear();
             for (auto& h : st)
                 m_baseline.push_back({h.xmit, h.returned});
