@@ -484,7 +484,7 @@ void MainWindow::onStartStop()
         QString target = m_targetEdit->text().trimmed();
         if (target.isEmpty()) return;
 
-        // Disable inputs immediately so UI stays responsive during async DNS
+        // Disable UI immediately — keeps window responsive during async DNS + init
         m_startStopBtn->setEnabled(false);
         m_targetEdit->setEnabled(false);
         m_ipv6Check->setEnabled(false);
@@ -492,33 +492,30 @@ void MainWindow::onStartStop()
 
         const int wantFamily = m_ipv6Check->isChecked() ? AF_INET6 : AF_INET;
         const bool darkMode  = m_darkMode;
-
-        // Resolve DNS and init network engine on background thread — keeps UI fully responsive
-        QPointer<MainWindow> self(this);
         IOpenMTROptionsProvider* provider = this;
+        QPointer<MainWindow> self(this);
+
+        // All slow work (DNS + LoadLibrary + IcmpCreateFile) on background thread
         std::thread([self, provider, target, wantFamily, darkMode]() {
-            // Create network wrapper here too — LoadLibrary/IcmpCreateFile can be slow on first run
+
+            // 1. Init network engine (LoadLibrary + IcmpCreateFile — slow on first run)
             auto net = std::make_shared<OpenMTRNetWrapper>(provider);
+
+            // 2. Resolve DNS
             struct addrinfo hints = {}, *res = nullptr;
             hints.ai_family = AF_UNSPEC;
-            int rc = getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res);
-
-            SOCKADDR_INET addr = {};
             bool resolved = false;
             bool ipv6 = (wantFamily == AF_INET6);
+            SOCKADDR_INET addr = {};
 
-            if (rc == 0 && res) {
-                // First pass: exact family match
+            if (getaddrinfo(target.toStdString().c_str(), nullptr, &hints, &res) == 0 && res) {
                 addrinfo* match = nullptr;
                 for (addrinfo* r = res; r; r = r->ai_next)
                     if (r->ai_family == wantFamily) { match = r; break; }
-
-                // Second pass: auto-fallback
                 if (!match) {
                     for (addrinfo* r = res; r; r = r->ai_next)
                         if (r->ai_family == AF_INET || r->ai_family == AF_INET6) { match = r; break; }
                 }
-
                 if (match) {
                     memcpy(&addr, match->ai_addr,
                         match->ai_addrlen < sizeof(addr) ? match->ai_addrlen : sizeof(addr));
@@ -528,11 +525,9 @@ void MainWindow::onStartStop()
                 freeaddrinfo(res);
             }
 
-            // Dispatch result back to UI thread
-            QMetaObject::invokeMethod(self, [self, target, addr, resolved, ipv6, darkMode, net]() {
+            // 3. Back to UI thread
+            QMetaObject::invokeMethod(qApp, [self, net, target, addr, resolved, ipv6, darkMode]() {
                 if (!self) return;
-
-                // Re-enable inputs if resolution failed or window was closed
                 if (!resolved) {
                     self->m_startStopBtn->setEnabled(true);
                     self->m_targetEdit->setEnabled(true);
@@ -541,12 +536,8 @@ void MainWindow::onStartStop()
                     MicaDialog::show(self, "OpenMTR", QString("Could not resolve \"%1\".").arg(target), darkMode);
                     return;
                 }
-
-                // Update IPv6 checkbox if family changed
                 self->m_ipv6Check->setChecked(ipv6);
-
-                // Start the trace
-                self->m_net = net;
+                self->m_net      = net;
                 self->m_tracing  = true;
                 self->m_counting = false;
                 self->m_table->setRowCount(0);
@@ -557,7 +548,6 @@ void MainWindow::onStartStop()
                 self->m_startStopBtn->setProperty("tracing", true);
                 self->m_startStopBtn->style()->polish(self->m_startStopBtn);
                 self->m_startStopBtn->setEnabled(true);
-
                 [[maybe_unused]] auto trace = self->m_net->DoTrace(self->m_stopSource.get_token(), addr);
                 self->m_refreshTimer->start();
                 self->m_elapsedTimer->start();
