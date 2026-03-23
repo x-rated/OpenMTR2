@@ -63,14 +63,14 @@ Date    : 2026-03-20 00:28:43
 ## Requirements
 
 - Windows 10 22H2+ (Windows 11 recommended for full Mica/DWM effects)
-- Qt 6.10+ with `msvc2022_64` kit
+- Qt 6.11+ with `msvc2022_64` kit
 - Visual Studio 2022 with C++20 support
 
 ---
 
 ## Building
 
-1. Install [Qt 6.10+](https://www.qt.io/download) with the `msvc2022_64` component
+1. Install [Qt 6.11+](https://www.qt.io/download) with the `msvc2022_64` component
 2. If not using the `QT_ROOT_DIR` environment variable, update `QtDir` in `OpenMTR.vcxproj` to match your Qt installation path
 3. Open `OpenMTR.sln` in Visual Studio 2022
 4. Build → **Release x64**

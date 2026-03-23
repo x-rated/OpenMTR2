@@ -52,7 +52,7 @@
   <!-- Qt: use QT_ROOT_DIR env var (set by install-qt-action), fall back to local path -->
   <PropertyGroup>
     <QtDir Condition="'$(QT_ROOT_DIR)'!=''">$(QT_ROOT_DIR)</QtDir>
-    <QtDir Condition="'$(QT_ROOT_DIR)'==''">C:\Qt\6.10.1\msvc2022_64</QtDir>
+    <QtDir Condition="'$(QT_ROOT_DIR)'==''">C:\Qt\6.11.0\msvc2022_64</QtDir>
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
