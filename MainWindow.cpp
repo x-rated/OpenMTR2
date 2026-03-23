@@ -435,9 +435,20 @@ QString MainWindow::getCachedASN(const QString& ip, bool ipv6) const
     auto key = ip.toStdString();
     auto it  = m_asnCache.find(key);
     if (it != m_asnCache.end()) return it->second.isEmpty() ? "-" : it->second;
-    QString asn = lookupASN(ip, ipv6);
-    m_asnCache[key] = asn;
-    return asn.isEmpty() ? "-" : asn;
+
+    // Not cached — mark as pending and fire background lookup
+    if (m_asnPending.insert(key).second) {
+        QPointer<MainWindow> self(const_cast<MainWindow*>(this));
+        std::thread([self, ip, ipv6, key]() {
+            QString asn = lookupASN(ip, ipv6);
+            QMetaObject::invokeMethod(qApp, [self, key, asn]() {
+                if (!self) return;
+                self->m_asnCache[key] = asn;
+                self->m_asnPending.erase(key);
+            }, Qt::QueuedConnection);
+        }).detach();
+    }
+    return "-";
 }
 
 void MainWindow::onStartStop()
@@ -460,6 +471,7 @@ void MainWindow::onStartStop()
         if (m_net) updateTable();
         m_baseline.clear();
         m_asnCache.clear();
+        m_asnPending.clear();
         // keep table visible after stopping — only go idle if discovery was never completed
 
         m_startStopBtn->setEnabled(false);
@@ -609,6 +621,7 @@ void MainWindow::onWarmupEnd()
         auto st = m_net->getCurrentState();
         m_baseline.clear();
         m_asnCache.clear();
+        m_asnPending.clear();
         for (auto& h : st)
             m_baseline.push_back({h.xmit, h.returned});
         m_counting = true;
